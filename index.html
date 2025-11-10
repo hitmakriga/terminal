@@ -373,6 +373,7 @@
                 this.reader = null;
                 this.writer = null;
                 this.isConnected = false;
+                this.dataBuffer = ''; // Buffer for incomplete data
                 this.counters = {
                     total: 0,
                     uid: 0,
@@ -452,9 +453,20 @@
             }
             
             processData(data) {
-                const lines = data.split('\n').filter(line => line.trim() !== '');
+                // Add new data to buffer
+                this.dataBuffer += data;
                 
+                // Process complete lines (ending with newline)
+                const lines = this.dataBuffer.split('\n');
+                
+                // Keep the last incomplete line in buffer
+                this.dataBuffer = lines.pop() || '';
+                
+                // Process all complete lines
                 lines.forEach(line => {
+                    line = line.trim();
+                    if (line === '') return;
+                    
                     this.counters.total++;
                     this.updateCounters();
                     
@@ -485,11 +497,16 @@
                             icon = '⏺️';
                             displayText = 'Encoder Button Pressed';
                         }
+                    } else {
+                        // Unknown message type
+                        cssClass = 'info';
+                        icon = '📝';
                     }
                     
                     this.displaySignal(displayText, cssClass, icon);
-                    this.updateCounters();
                 });
+                
+                this.updateCounters();
             }
             
             displaySignal(message, cssClass, icon = '') {
@@ -523,6 +540,7 @@
             
             async disconnect() {
                 this.isConnected = false;
+                this.dataBuffer = ''; // Clear buffer on disconnect
                 
                 if (this.reader) {
                     try {
@@ -561,6 +579,7 @@
             clearTerminal() {
                 this.terminal.innerHTML = 'Terminal cleared. Ready for new signals...\n';
                 this.counters = { total: 0, uid: 0, button: 0, encoder: 0 };
+                this.dataBuffer = ''; // Clear buffer on clear
                 this.updateCounters();
                 this.logMessage('🗑️ Terminal cleared', 'info');
             }
