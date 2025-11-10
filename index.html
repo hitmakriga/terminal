@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino Web Serial Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        
+        h1 {
+            color: #ffffff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #connectBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        #connectBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        #disconnectBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        #disconnectBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+        
+        #clearBtn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        #clearBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .status-container {
+            margin-bottom: 25px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+            border: 1px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .connected {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+        
+        .disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+        
+        .terminal-container {
+            background: #0a0a0a;
+            border-radius: 10px;
+            padding: 5px;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        
+        .terminal-header {
+            background: #1a1a1a;
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .terminal-title {
+            font-weight: 600;
+            color: #888;
+        }
+        
+        .terminal {
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            scrollbar-width: thin;
+            scrollbar-color: #333 #0a0a0a;
+        }
+        
+        .terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .terminal::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        
+        .terminal::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        .message {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .uid {
+            border-left-color: #f59e0b;
+            color: #f59e0b;
+        }
+        
+        .btn {
+            border-left-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .enc {
+            border-left-color: #10b981;
+            color: #10b981;
+        }
+        
+        .info {
+            border-left-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+        
+        .error {
+            border-left-color: #ef4444;
+            color: #ef4444;
+        }
+        
+        .success {
+            border-left-color: #22c55e;
+            color: #22c55e;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .signal-types {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .signal-type {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #333;
+            color: #fff;
+        }
+        
+        .type-uid { background: #f59e0b; }
+        .type-btn { background: #3b82f6; }
+        .type-enc { background: #10b981; }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            button {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 Arduino Web Serial Terminal</h1>
+            <div class="subtitle">Real-time monitoring of RFID, buttons, and encoder signals</div>
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn">
+                <span>🔌</span> Connect to Arduino
+            </button>
+            <button id="disconnectBtn" disabled>
+                <span>❌</span> Disconnect
+            </button>
+            <button id="clearBtn">
+                <span>🗑️</span> Clear Terminal
+            </button>
+        </div>
+        
+        <div class="status-container">
+            <div id="status" class="status disconnected">
+                🔴 Disconnected - Click "Connect to Arduino" to start monitoring
+            </div>
+        </div>
+        
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="terminal-title">LIVE TERMINAL OUTPUT</div>
+                <div class="signal-types">
+                    <div class="signal-type type-uid">UID</div>
+                    <div class="signal-type type-btn">BUTTONS</div>
+                    <div class="signal-type type-enc">ENCODER</div>
+                </div>
+            </div>
+            <div class="terminal" id="terminal">
+                Terminal ready. Connect to see real-time Arduino signals...
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="signalCount">0</div>
+                <div class="stat-label">Total Signals</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uidCount">0</div>
+                <div class="stat-label">RFID Cards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="buttonCount">0</div>
+                <div class="stat-label">Button Presses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="encoderCount">0</div>
+                <div class="stat-label">Encoder Events</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ArduinoTerminal {
+            constructor() {
+                this.port = null;
+                this.reader = null;
+                this.writer = null;
+                this.isConnected = false;
+                this.counters = {
+                    total: 0,
+                    uid: 0,
+                    button: 0,
+                    encoder: 0
+                };
+                
+                this.initializeElements();
+                this.initializeEventListeners();
+            }
+            
+            initializeElements() {
+                this.connectBtn = document.getElementById('connectBtn');
+                this.disconnectBtn = document.getElementById('disconnectBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.status = document.getElementById('status');
+                this.terminal = document.getElementById('terminal');
+                this.signalCount = document.getElementById('signalCount');
+                this.uidCount = document.getElementById('uidCount');
+                this.buttonCount = document.getElementById('buttonCount');
+                this.encoderCount = document.getElementById('encoderCount');
+            }
+            
+            initializeEventListeners() {
+                this.connectBtn.addEventListener('click', () => this.connect());
+                this.disconnectBtn.addEventListener('click', () => this.disconnect());
+                this.clearBtn.addEventListener('click', () => this.clearTerminal());
+            }
+            
+            async connect() {
+                try {
+                    if (!('serial' in navigator)) {
+                        this.logMessage('❌ Web Serial API is not supported in this browser. Try Chrome or Edge.', 'error');
+                        return;
+                    }
+                    
+                    this.port = await navigator.serial.requestPort();
+                    await this.port.open({ baudRate: 9600 });
+                    
+                    this.isConnected = true;
+                    this.updateUI();
+                    this.logMessage('✅ Connected to Arduino! Monitoring signals...', 'success');
+                    
+                    this.readData();
+                    
+                } catch (error) {
+                    this.logMessage(`❌ Connection failed: ${error.message}`, 'error');
+                }
+            }
+            
+            async readData() {
+                try {
+                    const decoder = new TextDecoder();
+                    
+                    while (this.port.readable && this.isConnected) {
+                        this.reader = this.port.readable.getReader();
+                        
+                        try {
+                            while (true) {
+                                const { value, done } = await this.reader.read();
+                                
+                                if (done) break;
+                                if (value) {
+                                    const text = decoder.decode(value);
+                                    this.processData(text);
+                                }
+                            }
+                        } finally {
+                            this.reader.releaseLock();
+                        }
+                    }
+                } catch (error) {
+                    if (this.isConnected) {
+                        this.logMessage(`❌ Read error: ${error.message}`, 'error');
+                    }
+                }
+            }
+            
+            processData(data) {
+                const lines = data.split('\n').filter(line => line.trim() !== '');
+                
+                lines.forEach(line => {
+                    this.counters.total++;
+                    this.updateCounters();
+                    
+                    let cssClass = '';
+                    let displayText = line;
+                    let icon = '';
+                    
+                    if (line.startsWith('UID:')) {
+                        cssClass = 'uid';
+                        icon = '🔑';
+                        displayText = `RFID Card: ${line.substring(4)}`;
+                        this.counters.uid++;
+                    } else if (line.startsWith('BTN')) {
+                        cssClass = 'btn';
+                        icon = '🔘';
+                        displayText = `Button ${line.substring(3)} Pressed`;
+                        this.counters.button++;
+                    } else if (line.startsWith('ENC')) {
+                        cssClass = 'enc';
+                        this.counters.encoder++;
+                        if (line === 'ENC+') {
+                            icon = '🔄';
+                            displayText = 'Encoder Rotated Right';
+                        } else if (line === 'ENC-') {
+                            icon = '🔄';
+                            displayText = 'Encoder Rotated Left';
+                        } else if (line === 'ENC_BTN') {
+                            icon = '⏺️';
+                            displayText = 'Encoder Button Pressed';
+                        }
+                    }
+                    
+                    this.displaySignal(displayText, cssClass, icon);
+                    this.updateCounters();
+                });
+            }
+            
+            displaySignal(message, cssClass, icon = '') {
+                const timestamp = new Date().toLocaleTimeString();
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${cssClass}`;
+                messageElement.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span> ${icon} ${message}
+                `;
+                
+                this.terminal.appendChild(messageElement);
+                this.terminal.scrollTop = this.terminal.scrollHeight;
+            }
+            
+            logMessage(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${type}`;
+                messageElement.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+                
+                this.terminal.appendChild(messageElement);
+                this.terminal.scrollTop = this.terminal.scrollHeight;
+            }
+            
+            updateCounters() {
+                this.signalCount.textContent = this.counters.total;
+                this.uidCount.textContent = this.counters.uid;
+                this.buttonCount.textContent = this.counters.button;
+                this.encoderCount.textContent = this.counters.encoder;
+            }
+            
+            async disconnect() {
+                this.isConnected = false;
+                
+                if (this.reader) {
+                    try {
+                        await this.reader.cancel();
+                    } catch (error) {
+                        console.error('Error cancelling reader:', error);
+                    }
+                }
+                
+                if (this.port) {
+                    try {
+                        await this.port.close();
+                    } catch (error) {
+                        console.error('Error closing port:', error);
+                    }
+                }
+                
+                this.updateUI();
+                this.logMessage('🔌 Disconnected from Arduino', 'info');
+            }
+            
+            updateUI() {
+                if (this.isConnected) {
+                    this.status.textContent = '🟢 Connected - Receiving signals from Arduino';
+                    this.status.className = 'status connected';
+                    this.connectBtn.disabled = true;
+                    this.disconnectBtn.disabled = false;
+                } else {
+                    this.status.textContent = '🔴 Disconnected - Click "Connect to Arduino" to start';
+                    this.status.className = 'status disconnected';
+                    this.connectBtn.disabled = false;
+                    this.disconnectBtn.disabled = true;
+                }
+            }
+            
+            clearTerminal() {
+                this.terminal.innerHTML = 'Terminal cleared. Ready for new signals...\n';
+                this.counters = { total: 0, uid: 0, button: 0, encoder: 0 };
+                this.updateCounters();
+                this.logMessage('🗑️ Terminal cleared', 'info');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            new ArduinoTerminal();
+        });
+    </script>
+</body>
+</html>
