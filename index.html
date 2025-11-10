@@ -373,7 +373,7 @@
                 this.reader = null;
                 this.writer = null;
                 this.isConnected = false;
-                this.dataBuffer = ''; // Buffer for incomplete data
+                this.dataBuffer = '';
                 this.counters = {
                     total: 0,
                     uid: 0,
@@ -426,86 +426,98 @@
             
             async readData() {
                 try {
-                    const decoder = new TextDecoder();
-                    
                     while (this.port.readable && this.isConnected) {
                         this.reader = this.port.readable.getReader();
+                        const decoder = new TextDecoder();
                         
                         try {
                             while (true) {
                                 const { value, done } = await this.reader.read();
                                 
-                                if (done) break;
+                                if (done) {
+                                    break;
+                                }
+                                
                                 if (value) {
-                                    const text = decoder.decode(value);
-                                    this.processData(text);
+                                    // Convert to string and process
+                                    const chunk = decoder.decode(value, { stream: true });
+                                    this.processChunk(chunk);
                                 }
                             }
+                        } catch (error) {
+                            this.logMessage(`❌ Read error: ${error.message}`, 'error');
                         } finally {
                             this.reader.releaseLock();
                         }
                     }
                 } catch (error) {
                     if (this.isConnected) {
-                        this.logMessage(`❌ Read error: ${error.message}`, 'error');
+                        this.logMessage(`❌ Connection error: ${error.message}`, 'error');
                     }
                 }
             }
             
-            processData(data) {
-                // Add new data to buffer
-                this.dataBuffer += data;
+            processChunk(chunk) {
+                // Add new chunk to buffer
+                this.dataBuffer += chunk;
                 
-                // Process complete lines (ending with newline)
-                const lines = this.dataBuffer.split('\n');
-                
-                // Keep the last incomplete line in buffer
-                this.dataBuffer = lines.pop() || '';
-                
-                // Process all complete lines
-                lines.forEach(line => {
-                    line = line.trim();
-                    if (line === '') return;
+                // Process all complete lines (ending with newline)
+                let newlineIndex;
+                while ((newlineIndex = this.dataBuffer.indexOf('\n')) !== -1) {
+                    // Extract one complete line
+                    const line = this.dataBuffer.substring(0, newlineIndex).trim();
                     
-                    this.counters.total++;
-                    this.updateCounters();
+                    // Remove the processed line from buffer
+                    this.dataBuffer = this.dataBuffer.substring(newlineIndex + 1);
                     
-                    let cssClass = '';
-                    let displayText = line;
-                    let icon = '';
-                    
-                    if (line.startsWith('UID:')) {
-                        cssClass = 'uid';
-                        icon = '🔑';
-                        displayText = `RFID Card: ${line.substring(4)}`;
-                        this.counters.uid++;
-                    } else if (line.startsWith('BTN')) {
-                        cssClass = 'btn';
-                        icon = '🔘';
-                        displayText = `Button ${line.substring(3)} Pressed`;
-                        this.counters.button++;
-                    } else if (line.startsWith('ENC')) {
-                        cssClass = 'enc';
-                        this.counters.encoder++;
-                        if (line === 'ENC+') {
-                            icon = '🔄';
-                            displayText = 'Encoder Rotated Right';
-                        } else if (line === 'ENC-') {
-                            icon = '🔄';
-                            displayText = 'Encoder Rotated Left';
-                        } else if (line === 'ENC_BTN') {
-                            icon = '⏺️';
-                            displayText = 'Encoder Button Pressed';
-                        }
-                    } else {
-                        // Unknown message type
-                        cssClass = 'info';
-                        icon = '📝';
+                    // Process the complete line
+                    if (line.length > 0) {
+                        this.processCompleteLine(line);
                     }
-                    
-                    this.displaySignal(displayText, cssClass, icon);
-                });
+                }
+            }
+            
+            processCompleteLine(line) {
+                this.counters.total++;
                 
+                let cssClass = '';
+                let displayText = line;
+                let icon = '';
+                
+                if (line.startsWith('UID:')) {
+                    cssClass = 'uid';
+                    icon = '🔑';
+                    displayText = `RFID Card: ${line.substring(4)}`;
+                    this.counters.uid++;
+                } else if (line.startsWith('BTN')) {
+                    cssClass = 'btn';
+                    icon = '🔘';
+                    const buttonNum = line.replace('BTN', '');
+                    displayText = `Button ${buttonNum} Pressed`;
+                    this.counters.button++;
+                } else if (line.startsWith('ENC')) {
+                    cssClass = 'enc';
+                    this.counters.encoder++;
+                    if (line === 'ENC+') {
+                        icon = '🔄';
+                        displayText = 'Encoder Rotated Right';
+                    } else if (line === 'ENC-') {
+                        icon = '🔄';
+                        displayText = 'Encoder Rotated Left';
+                    } else if (line === 'ENC_BTN') {
+                        icon = '⏺️';
+                        displayText = 'Encoder Button Pressed';
+                    } else {
+                        displayText = `Encoder: ${line}`;
+                    }
+                } else {
+                    // Unknown message type
+                    cssClass = 'info';
+                    icon = '📝';
+                    displayText = `Unknown: ${line}`;
+                }
+                
+                this.displaySignal(displayText, cssClass, icon);
                 this.updateCounters();
             }
             
@@ -524,7 +536,7 @@
             logMessage(message, type = 'info') {
                 const timestamp = new Date().toLocaleTimeString();
                 const messageElement = document.createElement('div');
-                messageElement.className = `message ${type}`;
+                messageClass = `message ${type}`;
                 messageElement.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
                 
                 this.terminal.appendChild(messageElement);
@@ -540,7 +552,7 @@
             
             async disconnect() {
                 this.isConnected = false;
-                this.dataBuffer = ''; // Clear buffer on disconnect
+                this.dataBuffer = '';
                 
                 if (this.reader) {
                     try {
@@ -579,7 +591,7 @@
             clearTerminal() {
                 this.terminal.innerHTML = 'Terminal cleared. Ready for new signals...\n';
                 this.counters = { total: 0, uid: 0, button: 0, encoder: 0 };
-                this.dataBuffer = ''; // Clear buffer on clear
+                this.dataBuffer = '';
                 this.updateCounters();
                 this.logMessage('🗑️ Terminal cleared', 'info');
             }
