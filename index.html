@@ -230,6 +230,12 @@
             color: #22c55e;
         }
         
+        .debug {
+            border-left-color: #888;
+            color: #888;
+            font-size: 12px;
+        }
+        
         .timestamp {
             color: #666;
             font-size: 12px;
@@ -410,17 +416,27 @@
                         return;
                     }
                     
+                    this.logMessage('🔍 Requesting serial port...', 'debug');
                     this.port = await navigator.serial.requestPort();
-                    await this.port.open({ baudRate: 9600 });
+                    
+                    this.logMessage('🔓 Opening serial port at 9600 baud...', 'debug');
+                    await this.port.open({ 
+                        baudRate: 9600,
+                        dataBits: 8,
+                        stopBits: 1,
+                        parity: 'none'
+                    });
                     
                     this.isConnected = true;
                     this.updateUI();
                     this.logMessage('✅ Connected to Arduino! Monitoring signals...', 'success');
+                    this.logMessage('📡 Waiting for data from Arduino...', 'debug');
                     
                     this.readData();
                     
                 } catch (error) {
                     this.logMessage(`❌ Connection failed: ${error.message}`, 'error');
+                    console.error('Connection error:', error);
                 }
             }
             
@@ -430,50 +446,69 @@
                         this.reader = this.port.readable.getReader();
                         const decoder = new TextDecoder();
                         
+                        this.logMessage('📖 Starting to read data stream...', 'debug');
+                        
                         try {
-                            while (true) {
+                            while (this.isConnected) {
                                 const { value, done } = await this.reader.read();
                                 
                                 if (done) {
+                                    this.logMessage('📚 Read stream ended', 'debug');
                                     break;
                                 }
                                 
                                 if (value) {
-                                    // Convert to string and process
-                                    const chunk = decoder.decode(value, { stream: true });
+                                    const chunk = decoder.decode(value);
+                                    this.logMessage(`📥 Received ${chunk.length} characters: "${this.escapeHtml(chunk)}"`, 'debug');
                                     this.processChunk(chunk);
                                 }
                             }
                         } catch (error) {
                             this.logMessage(`❌ Read error: ${error.message}`, 'error');
+                            console.error('Read error:', error);
                         } finally {
                             this.reader.releaseLock();
+                            this.logMessage('🔓 Reader lock released', 'debug');
                         }
                     }
                 } catch (error) {
                     if (this.isConnected) {
                         this.logMessage(`❌ Connection error: ${error.message}`, 'error');
+                        console.error('Connection error:', error);
                     }
                 }
             }
             
+            escapeHtml(text) {
+                return text.replace(/[&<>"']/g, function(m) {
+                    return '&#' + m.charCodeAt(0) + ';';
+                });
+            }
+            
             processChunk(chunk) {
-                // Add new chunk to buffer
                 this.dataBuffer += chunk;
+                this.logMessage(`📦 Buffer content: "${this.escapeHtml(this.dataBuffer)}"`, 'debug');
                 
-                // Process all complete lines (ending with newline)
                 let newlineIndex;
+                let linesProcessed = 0;
+                
                 while ((newlineIndex = this.dataBuffer.indexOf('\n')) !== -1) {
-                    // Extract one complete line
                     const line = this.dataBuffer.substring(0, newlineIndex).trim();
-                    
-                    // Remove the processed line from buffer
                     this.dataBuffer = this.dataBuffer.substring(newlineIndex + 1);
                     
-                    // Process the complete line
                     if (line.length > 0) {
+                        this.logMessage(`📄 Processing line: "${line}"`, 'debug');
                         this.processCompleteLine(line);
+                        linesProcessed++;
                     }
+                }
+                
+                if (linesProcessed > 0) {
+                    this.logMessage(`✅ Processed ${linesProcessed} complete lines`, 'debug');
+                }
+                
+                if (this.dataBuffer.length > 0) {
+                    this.logMessage(`⏳ Buffer has ${this.dataBuffer.length} pending characters`, 'debug');
                 }
             }
             
@@ -511,7 +546,6 @@
                         displayText = `Encoder: ${line}`;
                     }
                 } else {
-                    // Unknown message type
                     cssClass = 'info';
                     icon = '📝';
                     displayText = `Unknown: ${line}`;
@@ -536,7 +570,7 @@
             logMessage(message, type = 'info') {
                 const timestamp = new Date().toLocaleTimeString();
                 const messageElement = document.createElement('div');
-                messageClass = `message ${type}`;
+                messageElement.className = `message ${type}`;
                 messageElement.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
                 
                 this.terminal.appendChild(messageElement);
