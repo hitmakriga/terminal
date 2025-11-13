@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rīgas Ekosistēma</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .layout {
+            width: 100%;
+            min-height: 100vh;
+            display: grid;
+            grid-template-areas: "sidebar body";
+            grid-template-columns: 280px 1fr;
+            gap: 0;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: linear-gradient(135deg, #1e5799 0%, #207cca 51%, #2989d8 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            height: 100vh;
+            position: fixed;
+            width: 280px;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .nav-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .nav-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 1rem 1.2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .nav-button.active {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-button i {
+            font-size: 1.2rem;
+        }
+
+        .body {
+            grid-area: body;
+            padding: 3rem;
+            margin-left: 280px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #2c8c47 0%, #34a853 100%);
+            color: white;
+            padding: 3rem;
+            border-radius: 12px;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            opacity: 0.9;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .content-section h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #1e5799;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .card {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h4 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #207cca;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 1.5rem;
+        }
+
+        .stat-item {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            flex: 1;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e5799;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #666;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 768px) {
+            .layout {
+                grid-template-columns: 1fr;
+                grid-template-areas: "body";
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .body {
+                margin-left: 0;
+                padding: 1.5rem;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <section class="layout">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>Rīgas Ekosistēma</h1>
+                <p>Dabas un pilsētas harmonija</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-button active">
+                    <i class="fas fa-home"></i>
+                    Sākums
+                </button>
+                <button class="nav-button">
+                    <i class="fas fa-tree"></i>
+                    Dabas objekti
+                </button>
+                <button class="nav-button">
+                    <i class="fas fa-recycle"></i>
+                            Atkritumu apsaimniekošana
+                </button>
+                <button class="nav-button">
+                    <i class="fas fa-leaf"></i>
+                    Zaļās zonas
+                </button>
+                <button class="nav-button">
+                    <i class="fas fa-hands-helping"></i>
+                    Piedalīties
+                </button>
+            </div>
+        </div>
+        <div class="body">
+            <div class="hero">
+                <h2>Rīga - zaļā pilsēta</h2>
+                <p>Rīgas ekosistēma ir unikāls dabas un pilsētas vide veidojums, kas apvieno bagātīgo dabas daudzveidību ar mūsdienīgu pilsētas attīstību.</p>
+            </div>
+            
+            <div class="content-section">
+                <h3>Par Rīgas ekosistēmu</h3>
+                <p>Rīgas pilsētas teritorijā atrodas vairāk nekā 20 dabas liegumi, 3 dabas parki un vairāk nekā 100 aizsargājami dabas objekti. Pilsētas ekosistēma ietver dažādus biotopus - no jūras piekrastes līdz mežiem, ezeriem un purviem.</p>
+                
+                <div class="content-grid">
+                    <div class="card">
+                        <h4>Dabas daudzveidība</h4>
+                        <p>Rīgā konstatētas vairāk nekā 1200 augu sugas un 300 putnu sugas, kas padara to par vienu no bioloģiski bagātākajām galvaspilsētām Eiropā.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Zaļās teritorijas</h4>
+                        <p>Vairāk nekā 40% no Rīgas teritorijas aizņem zaļās zonas, kas nodrošina kvalitatīvu gaisu un labvēlīgu mikroklimatu.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Ūdens resursi</h4>
+                        <p>Rīgā atrodas 4 lieli ezeri, Daugava un vairāki mazi ūdenstilpni, kas veido nozīmīgu daļu no pilsētas ekosistēmas.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-section">
+                <h3>Ekosistēmas rādītāji</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number">54%</div>
+                        <div class="stat-label">Zaļo zonu īpatsvars</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">1200+</div>
+                        <div class="stat-label">Augu sugas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">300+</div>
+                        <div class="stat-label">Putnu sugas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">23</div>
+                        <div class="stat-label">Dabas liegumi</div>
+                    </div>
+                </div>
+            </div>
+            
+            <footer>
+                <p>Rīgas Ekosistēmas Mājaslapa &copy; 2023. Visas tiesības aizsargātas.</p>
+            </footer>
+        </div>
+    </section>
+
+    <script>
+        // Pogas interaktivitāte
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.nav-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Šeit var pievienot satura maiņas loģiku
+                console.log('Noklikšķināts uz: ' + this.textContent.trim());
+            });
+        });
+    </script>
+</body>
+</html>
