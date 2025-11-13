@@ -292,99 +292,171 @@
         .type-btn { background: #3b82f6; }
         .type-enc { background: #10b981; }
         
-        /* Photo Viewer Styles */
-        .photo-viewer-container {
-            margin-top: 30px;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #333;
-            background: #0a0a0a;
-        }
-        
-        .photo-viewer-header {
-            background: #1a1a1a;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
-        }
-        
-        .photo-viewer-title {
-            font-weight: 600;
-            color: #888;
-        }
-        
-        .photo-controls {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .photo-btn {
-            padding: 8px 16px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-        }
-        
-        .photo-btn:hover {
-            background: #444;
-        }
-        
-        .photo-viewer {
-            position: relative;
+        /* Photo Overlay Styles */
+        .photo-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 500px;
-            overflow: hidden;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #000;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s;
+        }
+        
+        .photo-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .photo-container {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         .photo {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
+            transform: scale(0.8);
             opacity: 0;
-            transition: opacity 0.5s ease;
-            position: absolute;
+            transition: transform 0.5s ease, opacity 0.5s ease;
         }
         
-        .photo.active {
+        .photo-overlay.active .photo {
+            transform: scale(1);
             opacity: 1;
         }
         
         .photo-info {
             position: absolute;
-            bottom: 0;
+            bottom: -60px;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .photo-title {
-            font-weight: 600;
+            text-align: center;
             color: white;
         }
         
-        .photo-counter {
-            color: #888;
-            font-size: 14px;
+        .photo-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
         
-        .no-photo {
-            color: #666;
-            font-size: 18px;
-            text-align: center;
+        .photo-counter {
+            color: #aaa;
+            font-size: 1em;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.3s ease;
+            z-index: 1001;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.3s ease;
+            z-index: 1001;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .prev-btn {
+            left: 20px;
+        }
+        
+        .next-btn {
+            right: 20px;
+        }
+        
+        .photo-indicators {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            z-index: 1001;
+        }
+        
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .indicator.active {
+            background: white;
+        }
+        
+        .test-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .test-btn {
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn:hover {
+            background: #444;
         }
         
         @media (max-width: 768px) {
@@ -406,8 +478,14 @@
                 justify-content: center;
             }
             
-            .photo-viewer {
-                height: 300px;
+            .nav-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2em;
+            }
+            
+            .photo-title {
+                font-size: 1.2em;
             }
         }
     </style>
@@ -416,7 +494,7 @@
     <div class="container">
         <div class="header">
             <h1>📷 Arduino Photo Viewer</h1>
-            <div class="subtitle">Display photos based on Arduino button signals</div>
+            <div class="subtitle">Photos pop up in full screen based on Arduino button signals</div>
         </div>
         
         <div class="controls">
@@ -451,20 +529,10 @@
             </div>
         </div>
         
-        <div class="photo-viewer-container">
-            <div class="photo-viewer-header">
-                <div class="photo-viewer-title">PHOTO VIEWER</div>
-                <div class="photo-controls">
-                    <button class="photo-btn" id="prevBtn">◀ Previous</button>
-                    <button class="photo-btn" id="nextBtn">Next ▶</button>
-                </div>
-            </div>
-            <div class="photo-viewer" id="photoViewer">
-                <div class="no-photo">No photo selected. Press BTN1, BTN2, or BTN3 to display a photo</div>
-                <img src="" class="photo" id="photo1" alt="Photo 1">
-                <img src="" class="photo" id="photo2" alt="Photo 2">
-                <img src="" class="photo" id="photo3" alt="Photo 3">
-            </div>
+        <div class="test-buttons">
+            <button class="test-btn" id="testBtn1">Test BTN1</button>
+            <button class="test-btn" id="testBtn2">Test BTN2</button>
+            <button class="test-btn" id="testBtn3">Test BTN3</button>
         </div>
         
         <div class="stats">
@@ -480,10 +548,65 @@
                 <div class="stat-number" id="buttonCount">0</div>
                 <div class="stat-label">Button Presses</div>
             </div>
-            <div class="stat-stat-card">
+            <div class="stat-card">
                 <div class="stat-number" id="encoderCount">0</div>
                 <div class="stat-label">Encoder Events</div>
             </div>
+        </div>
+    </div>
+
+    <!-- Photo Overlays -->
+    <div class="photo-overlay" id="photoOverlay1">
+        <button class="close-btn" id="closeBtn1">×</button>
+        <button class="nav-btn prev-btn" id="prevBtn1">‹</button>
+        <button class="nav-btn next-btn" id="nextBtn1">›</button>
+        <div class="photo-container">
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb" class="photo" alt="Mountain Landscape">
+            <div class="photo-info">
+                <div class="photo-title">Mountain Landscape</div>
+                <div class="photo-counter">1/3</div>
+            </div>
+        </div>
+        <div class="photo-indicators">
+            <div class="indicator active" data-photo="1"></div>
+            <div class="indicator" data-photo="2"></div>
+            <div class="indicator" data-photo="3"></div>
+        </div>
+    </div>
+    
+    <div class="photo-overlay" id="photoOverlay2">
+        <button class="close-btn" id="closeBtn2">×</button>
+        <button class="nav-btn prev-btn" id="prevBtn2">‹</button>
+        <button class="nav-btn next-btn" id="nextBtn2">›</button>
+        <div class="photo-container">
+            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05" class="photo" alt="Forest Path">
+            <div class="photo-info">
+                <div class="photo-title">Forest Path</div>
+                <div class="photo-counter">2/3</div>
+            </div>
+        </div>
+        <div class="photo-indicators">
+            <div class="indicator" data-photo="1"></div>
+            <div class="indicator active" data-photo="2"></div>
+            <div class="indicator" data-photo="3"></div>
+        </div>
+    </div>
+    
+    <div class="photo-overlay" id="photoOverlay3">
+        <button class="close-btn" id="closeBtn3">×</button>
+        <button class="nav-btn prev-btn" id="prevBtn3">‹</button>
+        <button class="nav-btn next-btn" id="nextBtn3">›</button>
+        <div class="photo-container">
+            <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e" class="photo" alt="Coastal View">
+            <div class="photo-info">
+                <div class="photo-title">Coastal View</div>
+                <div class="photo-counter">3/3</div>
+            </div>
+        </div>
+        <div class="photo-indicators">
+            <div class="indicator" data-photo="1"></div>
+            <div class="indicator" data-photo="2"></div>
+            <div class="indicator active" data-photo="3"></div>
         </div>
     </div>
 
@@ -526,13 +649,15 @@
                 this.buttonCount = document.getElementById('buttonCount');
                 this.encoderCount = document.getElementById('encoderCount');
                 
-                // Photo viewer elements
-                this.photoViewer = document.getElementById('photoViewer');
-                this.photo1 = document.getElementById('photo1');
-                this.photo2 = document.getElementById('photo2');
-                this.photo3 = document.getElementById('photo3');
-                this.prevBtn = document.getElementById('prevBtn');
-                this.nextBtn = document.getElementById('nextBtn');
+                // Test buttons
+                this.testBtn1 = document.getElementById('testBtn1');
+                this.testBtn2 = document.getElementById('testBtn2');
+                this.testBtn3 = document.getElementById('testBtn3');
+                
+                // Photo overlays
+                this.photoOverlay1 = document.getElementById('photoOverlay1');
+                this.photoOverlay2 = document.getElementById('photoOverlay2');
+                this.photoOverlay3 = document.getElementById('photoOverlay3');
             }
             
             initializeEventListeners() {
@@ -540,15 +665,47 @@
                 this.disconnectBtn.addEventListener('click', () => this.disconnect());
                 this.clearBtn.addEventListener('click', () => this.clearTerminal());
                 
-                // Photo navigation
-                this.prevBtn.addEventListener('click', () => this.showPreviousPhoto());
-                this.nextBtn.addEventListener('click', () => this.showNextPhoto());
+                // Test buttons
+                this.testBtn1.addEventListener('click', () => this.showPhoto(1));
+                this.testBtn2.addEventListener('click', () => this.showPhoto(2));
+                this.testBtn3.addEventListener('click', () => this.showPhoto(3));
                 
-                // Manual photo selection buttons (for testing without Arduino)
+                // Close buttons
+                document.getElementById('closeBtn1').addEventListener('click', () => this.hidePhoto(1));
+                document.getElementById('closeBtn2').addEventListener('click', () => this.hidePhoto(2));
+                document.getElementById('closeBtn3').addEventListener('click', () => this.hidePhoto(3));
+                
+                // Navigation buttons
+                document.getElementById('prevBtn1').addEventListener('click', () => this.showPreviousPhoto());
+                document.getElementById('nextBtn1').addEventListener('click', () => this.showNextPhoto());
+                document.getElementById('prevBtn2').addEventListener('click', () => this.showPreviousPhoto());
+                document.getElementById('nextBtn2').addEventListener('click', () => this.showNextPhoto());
+                document.getElementById('prevBtn3').addEventListener('click', () => this.showPreviousPhoto());
+                document.getElementById('nextBtn3').addEventListener('click', () => this.showNextPhoto());
+                
+                // Indicators
+                document.querySelectorAll('.indicator').forEach(indicator => {
+                    indicator.addEventListener('click', () => {
+                        const photoId = parseInt(indicator.getAttribute('data-photo'));
+                        this.showPhoto(photoId);
+                    });
+                });
+                
+                // Keyboard shortcuts
                 document.addEventListener('keydown', (e) => {
-                    if (e.key === '1') this.showPhoto(1);
-                    if (e.key === '2') this.showPhoto(2);
-                    if (e.key === '3') this.showPhoto(3);
+                    if (e.key === 'Escape') {
+                        this.hideAllPhotos();
+                    } else if (e.key === 'ArrowLeft') {
+                        this.showPreviousPhoto();
+                    } else if (e.key === 'ArrowRight') {
+                        this.showNextPhoto();
+                    } else if (e.key === '1') {
+                        this.showPhoto(1);
+                    } else if (e.key === '2') {
+                        this.showPhoto(2);
+                    } else if (e.key === '3') {
+                        this.showPhoto(3);
+                    }
                 });
             }
             
@@ -720,27 +877,32 @@
             
             showPhoto(photoId) {
                 // Hide all photos first
-                document.querySelectorAll('.photo').forEach(photo => {
-                    photo.classList.remove('active');
-                });
-                
-                // Hide the "no photo" message
-                this.photoViewer.querySelector('.no-photo').style.display = 'none';
+                this.hideAllPhotos();
                 
                 // Show the selected photo
-                const photoElement = document.getElementById(`photo${photoId}`);
-                const photoData = this.photos.find(p => p.id === photoId);
-                
-                if (photoElement && photoData) {
-                    photoElement.src = photoData.src;
-                    photoElement.classList.add('active');
+                const photoOverlay = document.getElementById(`photoOverlay${photoId}`);
+                if (photoOverlay) {
+                    photoOverlay.classList.add('active');
                     this.currentPhoto = photoId;
                     
-                    // Update photo info
-                    this.updatePhotoInfo(photoData.title, photoId);
+                    // Update indicators
+                    this.updateIndicators(photoId);
                     
-                    this.logMessage(`🖼️ Displaying Photo ${photoId}: ${photoData.title}`, 'success');
+                    this.logMessage(`🖼️ Displaying Photo ${photoId}: ${this.photos[photoId-1].title}`, 'success');
                 }
+            }
+            
+            hidePhoto(photoId) {
+                const photoOverlay = document.getElementById(`photoOverlay${photoId}`);
+                if (photoOverlay) {
+                    photoOverlay.classList.remove('active');
+                }
+            }
+            
+            hideAllPhotos() {
+                document.querySelectorAll('.photo-overlay').forEach(overlay => {
+                    overlay.classList.remove('active');
+                });
             }
             
             showNextPhoto() {
@@ -755,22 +917,15 @@
                 this.showPhoto(prevId);
             }
             
-            updatePhotoInfo(title, id) {
-                // Remove existing info if any
-                const existingInfo = this.photoViewer.querySelector('.photo-info');
-                if (existingInfo) {
-                    existingInfo.remove();
+            updateIndicators(activeId) {
+                document.querySelectorAll('.indicator').forEach(indicator => {
+                    indicator.classList.remove('active');
+                });
+                
+                const activeIndicator = document.querySelector(`.indicator[data-photo="${activeId}"]`);
+                if (activeIndicator) {
+                    activeIndicator.classList.add('active');
                 }
-                
-                // Create new info bar
-                const infoBar = document.createElement('div');
-                infoBar.className = 'photo-info';
-                infoBar.innerHTML = `
-                    <div class="photo-title">${title}</div>
-                    <div class="photo-counter">${id}/3</div>
-                `;
-                
-                this.photoViewer.appendChild(infoBar);
             }
             
             displaySignal(message, cssClass, icon = '') {
