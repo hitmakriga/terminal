@@ -1,3 +1,857 @@
-<DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino Photo Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <html> hi</html>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        
+        h1 {
+            color: #ffffff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #connectBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        #connectBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        #disconnectBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        #disconnectBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+        
+        #clearBtn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        #clearBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .status-container {
+            margin-bottom: 25px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+            border: 1px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .connected {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+        
+        .disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+        
+        .terminal-container {
+            background: #0a0a0a;
+            border-radius: 10px;
+            padding: 5px;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        
+        .terminal-header {
+            background: #1a1a1a;
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .terminal-title {
+            font-weight: 600;
+            color: #888;
+        }
+        
+        .terminal {
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            scrollbar-width: thin;
+            scrollbar-color: #333 #0a0a0a;
+        }
+        
+        .terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .terminal::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        
+        .terminal::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        .message {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .uid {
+            border-left-color: #f59e0b;
+            color: #f59e0b;
+        }
+        
+        .btn {
+            border-left-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .enc {
+            border-left-color: #10b981;
+            color: #10b981;
+        }
+        
+        .info {
+            border-left-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+        
+        .error {
+            border-left-color: #ef4444;
+            color: #ef4444;
+        }
+        
+        .success {
+            border-left-color: #22c55e;
+            color: #22c55e;
+        }
+        
+        .debug {
+            border-left-color: #888;
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .signal-types {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .signal-type {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #333;
+            color: #fff;
+        }
+        
+        .type-uid { background: #f59e0b; }
+        .type-btn { background: #3b82f6; }
+        .type-enc { background: #10b981; }
+        
+        /* Photo Viewer Styles */
+        .photo-viewer-container {
+            margin-top: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
+            background: #0a0a0a;
+        }
+        
+        .photo-viewer-header {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .photo-viewer-title {
+            font-weight: 600;
+            color: #888;
+        }
+        
+        .photo-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .photo-btn {
+            padding: 8px 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .photo-btn:hover {
+            background: #444;
+        }
+        
+        .photo-viewer {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+        
+        .photo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            position: absolute;
+        }
+        
+        .photo.active {
+            opacity: 1;
+        }
+        
+        .photo-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .photo-title {
+            font-weight: 600;
+            color: white;
+        }
+        
+        .photo-counter {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .no-photo {
+            color: #666;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            button {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+            }
+            
+            .photo-viewer {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📷 Arduino Photo Viewer</h1>
+            <div class="subtitle">Display photos based on Arduino button signals</div>
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn">
+                <span>🔌</span> Connect to Arduino
+            </button>
+            <button id="disconnectBtn" disabled>
+                <span>❌</span> Disconnect
+            </button>
+            <button id="clearBtn">
+                <span>🗑️</span> Clear Terminal
+            </button>
+        </div>
+        
+        <div class="status-container">
+            <div id="status" class="status disconnected">
+                🔴 Disconnected - Click "Connect to Arduino" to start monitoring
+            </div>
+        </div>
+        
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="terminal-title">LIVE TERMINAL OUTPUT</div>
+                <div class="signal-types">
+                    <div class="signal-type type-uid">UID</div>
+                    <div class="signal-type type-btn">BUTTONS</div>
+                    <div class="signal-type type-enc">ENCODER</div>
+                </div>
+            </div>
+            <div class="terminal" id="terminal">
+                Terminal ready. Connect to see real-time Arduino signals...
+            </div>
+        </div>
+        
+        <div class="photo-viewer-container">
+            <div class="photo-viewer-header">
+                <div class="photo-viewer-title">PHOTO VIEWER</div>
+                <div class="photo-controls">
+                    <button class="photo-btn" id="prevBtn">◀ Previous</button>
+                    <button class="photo-btn" id="nextBtn">Next ▶</button>
+                </div>
+            </div>
+            <div class="photo-viewer" id="photoViewer">
+                <div class="no-photo">No photo selected. Press BTN1, BTN2, or BTN3 to display a photo</div>
+                <img src="" class="photo" id="photo1" alt="Photo 1">
+                <img src="" class="photo" id="photo2" alt="Photo 2">
+                <img src="" class="photo" id="photo3" alt="Photo 3">
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="signalCount">0</div>
+                <div class="stat-label">Total Signals</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uidCount">0</div>
+                <div class="stat-label">RFID Cards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="buttonCount">0</div>
+                <div class="stat-label">Button Presses</div>
+            </div>
+            <div class="stat-stat-card">
+                <div class="stat-number" id="encoderCount">0</div>
+                <div class="stat-label">Encoder Events</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ArduinoPhotoViewer {
+            constructor() {
+                this.port = null;
+                this.reader = null;
+                this.writer = null;
+                this.isConnected = false;
+                this.dataBuffer = '';
+                this.counters = {
+                    total: 0,
+                    uid: 0,
+                    button: 0,
+                    encoder: 0
+                };
+                
+                // Photo management
+                this.currentPhoto = 0;
+                this.photos = [
+                    { id: 1, src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb', title: 'Mountain Landscape' },
+                    { id: 2, src: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05', title: 'Forest Path' },
+                    { id: 3, src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e', title: 'Coastal View' }
+                ];
+                
+                this.initializeElements();
+                this.initializeEventListeners();
+                this.preloadPhotos();
+            }
+            
+            initializeElements() {
+                this.connectBtn = document.getElementById('connectBtn');
+                this.disconnectBtn = document.getElementById('disconnectBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.status = document.getElementById('status');
+                this.terminal = document.getElementById('terminal');
+                this.signalCount = document.getElementById('signalCount');
+                this.uidCount = document.getElementById('uidCount');
+                this.buttonCount = document.getElementById('buttonCount');
+                this.encoderCount = document.getElementById('encoderCount');
+                
+                // Photo viewer elements
+                this.photoViewer = document.getElementById('photoViewer');
+                this.photo1 = document.getElementById('photo1');
+                this.photo2 = document.getElementById('photo2');
+                this.photo3 = document.getElementById('photo3');
+                this.prevBtn = document.getElementById('prevBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+            }
+            
+            initializeEventListeners() {
+                this.connectBtn.addEventListener('click', () => this.connect());
+                this.disconnectBtn.addEventListener('click', () => this.disconnect());
+                this.clearBtn.addEventListener('click', () => this.clearTerminal());
+                
+                // Photo navigation
+                this.prevBtn.addEventListener('click', () => this.showPreviousPhoto());
+                this.nextBtn.addEventListener('click', () => this.showNextPhoto());
+                
+                // Manual photo selection buttons (for testing without Arduino)
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === '1') this.showPhoto(1);
+                    if (e.key === '2') this.showPhoto(2);
+                    if (e.key === '3') this.showPhoto(3);
+                });
+            }
+            
+            preloadPhotos() {
+                // Preload all photos for smoother transitions
+                this.photos.forEach(photo => {
+                    const img = new Image();
+                    img.src = photo.src;
+                });
+            }
+            
+            async connect() {
+                try {
+                    if (!('serial' in navigator)) {
+                        this.logMessage('❌ Web Serial API is not supported in this browser. Try Chrome or Edge.', 'error');
+                        return;
+                    }
+                    
+                    this.logMessage('🔍 Requesting serial port...', 'debug');
+                    this.port = await navigator.serial.requestPort();
+                    
+                    this.logMessage('🔓 Opening serial port at 9600 baud...', 'debug');
+                    await this.port.open({ 
+                        baudRate: 9600,
+                        dataBits: 8,
+                        stopBits: 1,
+                        parity: 'none'
+                    });
+                    
+                    this.isConnected = true;
+                    this.updateUI();
+                    this.logMessage('✅ Connected to Arduino! Monitoring signals...', 'success');
+                    this.logMessage('📡 Waiting for data from Arduino...', 'debug');
+                    
+                    this.readData();
+                    
+                } catch (error) {
+                    this.logMessage(`❌ Connection failed: ${error.message}`, 'error');
+                    console.error('Connection error:', error);
+                }
+            }
+            
+            async readData() {
+                try {
+                    while (this.port.readable && this.isConnected) {
+                        this.reader = this.port.readable.getReader();
+                        const decoder = new TextDecoder();
+                        
+                        this.logMessage('📖 Starting to read data stream...', 'debug');
+                        
+                        try {
+                            while (this.isConnected) {
+                                const { value, done } = await this.reader.read();
+                                
+                                if (done) {
+                                    this.logMessage('📚 Read stream ended', 'debug');
+                                    break;
+                                }
+                                
+                                if (value) {
+                                    const chunk = decoder.decode(value);
+                                    this.logMessage(`📥 Received ${chunk.length} characters: "${this.escapeHtml(chunk)}"`, 'debug');
+                                    this.processChunk(chunk);
+                                }
+                            }
+                        } catch (error) {
+                            this.logMessage(`❌ Read error: ${error.message}`, 'error');
+                            console.error('Read error:', error);
+                        } finally {
+                            this.reader.releaseLock();
+                            this.logMessage('🔓 Reader lock released', 'debug');
+                        }
+                    }
+                } catch (error) {
+                    if (this.isConnected) {
+                        this.logMessage(`❌ Connection error: ${error.message}`, 'error');
+                        console.error('Connection error:', error);
+                    }
+                }
+            }
+            
+            escapeHtml(text) {
+                return text.replace(/[&<>"']/g, function(m) {
+                    return '&#' + m.charCodeAt(0) + ';';
+                });
+            }
+            
+            processChunk(chunk) {
+                this.dataBuffer += chunk;
+                this.logMessage(`📦 Buffer content: "${this.escapeHtml(this.dataBuffer)}"`, 'debug');
+                
+                let newlineIndex;
+                let linesProcessed = 0;
+                
+                while ((newlineIndex = this.dataBuffer.indexOf('\n')) !== -1) {
+                    const line = this.dataBuffer.substring(0, newlineIndex).trim();
+                    this.dataBuffer = this.dataBuffer.substring(newlineIndex + 1);
+                    
+                    if (line.length > 0) {
+                        this.logMessage(`📄 Processing line: "${line}"`, 'debug');
+                        this.processCompleteLine(line);
+                        linesProcessed++;
+                    }
+                }
+                
+                if (linesProcessed > 0) {
+                    this.logMessage(`✅ Processed ${linesProcessed} complete lines`, 'debug');
+                }
+                
+                if (this.dataBuffer.length > 0) {
+                    this.logMessage(`⏳ Buffer has ${this.dataBuffer.length} pending characters`, 'debug');
+                }
+            }
+            
+            processCompleteLine(line) {
+                this.counters.total++;
+                
+                let cssClass = '';
+                let displayText = line;
+                let icon = '';
+                
+                if (line.startsWith('UID:')) {
+                    cssClass = 'uid';
+                    icon = '🔑';
+                    displayText = `RFID Card: ${line.substring(4)}`;
+                    this.counters.uid++;
+                } else if (line.startsWith('BTN')) {
+                    cssClass = 'btn';
+                    icon = '🔘';
+                    const buttonNum = line.replace('BTN', '');
+                    displayText = `Button ${buttonNum} Pressed`;
+                    this.counters.button++;
+                    
+                    // Handle button press to show photo
+                    this.handleButtonPress(buttonNum);
+                } else if (line.startsWith('ENC')) {
+                    cssClass = 'enc';
+                    this.counters.encoder++;
+                    if (line === 'ENC+') {
+                        icon = '🔄';
+                        displayText = 'Encoder Rotated Right';
+                        this.showNextPhoto();
+                    } else if (line === 'ENC-') {
+                        icon = '🔄';
+                        displayText = 'Encoder Rotated Left';
+                        this.showPreviousPhoto();
+                    } else if (line === 'ENC_BTN') {
+                        icon = '⏺️';
+                        displayText = 'Encoder Button Pressed';
+                    } else {
+                        displayText = `Encoder: ${line}`;
+                    }
+                } else {
+                    cssClass = 'info';
+                    icon = '📝';
+                    displayText = `Unknown: ${line}`;
+                }
+                
+                this.displaySignal(displayText, cssClass, icon);
+                this.updateCounters();
+            }
+            
+            handleButtonPress(buttonNum) {
+                const buttonId = parseInt(buttonNum);
+                if (buttonId >= 1 && buttonId <= 3) {
+                    this.showPhoto(buttonId);
+                }
+            }
+            
+            showPhoto(photoId) {
+                // Hide all photos first
+                document.querySelectorAll('.photo').forEach(photo => {
+                    photo.classList.remove('active');
+                });
+                
+                // Hide the "no photo" message
+                this.photoViewer.querySelector('.no-photo').style.display = 'none';
+                
+                // Show the selected photo
+                const photoElement = document.getElementById(`photo${photoId}`);
+                const photoData = this.photos.find(p => p.id === photoId);
+                
+                if (photoElement && photoData) {
+                    photoElement.src = photoData.src;
+                    photoElement.classList.add('active');
+                    this.currentPhoto = photoId;
+                    
+                    // Update photo info
+                    this.updatePhotoInfo(photoData.title, photoId);
+                    
+                    this.logMessage(`🖼️ Displaying Photo ${photoId}: ${photoData.title}`, 'success');
+                }
+            }
+            
+            showNextPhoto() {
+                let nextId = this.currentPhoto + 1;
+                if (nextId > 3) nextId = 1;
+                this.showPhoto(nextId);
+            }
+            
+            showPreviousPhoto() {
+                let prevId = this.currentPhoto - 1;
+                if (prevId < 1) prevId = 3;
+                this.showPhoto(prevId);
+            }
+            
+            updatePhotoInfo(title, id) {
+                // Remove existing info if any
+                const existingInfo = this.photoViewer.querySelector('.photo-info');
+                if (existingInfo) {
+                    existingInfo.remove();
+                }
+                
+                // Create new info bar
+                const infoBar = document.createElement('div');
+                infoBar.className = 'photo-info';
+                infoBar.innerHTML = `
+                    <div class="photo-title">${title}</div>
+                    <div class="photo-counter">${id}/3</div>
+                `;
+                
+                this.photoViewer.appendChild(infoBar);
+            }
+            
+            displaySignal(message, cssClass, icon = '') {
+                const timestamp = new Date().toLocaleTimeString();
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${cssClass}`;
+                messageElement.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span> ${icon} ${message}
+                `;
+                
+                this.terminal.appendChild(messageElement);
+                this.terminal.scrollTop = this.terminal.scrollHeight;
+            }
+            
+            logMessage(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${type}`;
+                messageElement.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+                
+                this.terminal.appendChild(messageElement);
+                this.terminal.scrollTop = this.terminal.scrollHeight;
+            }
+            
+            updateCounters() {
+                this.signalCount.textContent = this.counters.total;
+                this.uidCount.textContent = this.counters.uid;
+                this.buttonCount.textContent = this.counters.button;
+                this.encoderCount.textContent = this.counters.encoder;
+            }
+            
+            async disconnect() {
+                this.isConnected = false;
+                this.dataBuffer = '';
+                
+                if (this.reader) {
+                    try {
+                        await this.reader.cancel();
+                    } catch (error) {
+                        console.error('Error cancelling reader:', error);
+                    }
+                }
+                
+                if (this.port) {
+                    try {
+                        await this.port.close();
+                    } catch (error) {
+                        console.error('Error closing port:', error);
+                    }
+                }
+                
+                this.updateUI();
+                this.logMessage('🔌 Disconnected from Arduino', 'info');
+            }
+            
+            updateUI() {
+                if (this.isConnected) {
+                    this.status.textContent = '🟢 Connected - Receiving signals from Arduino';
+                    this.status.className = 'status connected';
+                    this.connectBtn.disabled = true;
+                    this.disconnectBtn.disabled = false;
+                } else {
+                    this.status.textContent = '🔴 Disconnected - Click "Connect to Arduino" to start';
+                    this.status.className = 'status disconnected';
+                    this.connectBtn.disabled = false;
+                    this.disconnectBtn.disabled = true;
+                }
+            }
+            
+            clearTerminal() {
+                this.terminal.innerHTML = 'Terminal cleared. Ready for new signals...\n';
+                this.counters = { total: 0, uid: 0, button: 0, encoder: 0 };
+                this.dataBuffer = '';
+                this.updateCounters();
+                this.logMessage('🗑️ Terminal cleared', 'info');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            new ArduinoPhotoViewer();
+        });
+    </script>
+</body>
+</html>
